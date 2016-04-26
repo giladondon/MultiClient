@@ -28,7 +28,7 @@ def main():
     client_socket = socket.socket()
     client_socket.connect((SERVER, PORT))
     while True:
-        read_list, write_list, error_list = select([client_socket], [client_socket], [])
+        read_list, write_list, error_list = select.select([client_socket], [client_socket], [])
         if read_list is not None:
             print(client_socket.recv[KB])
         else:

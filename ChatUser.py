@@ -30,7 +30,7 @@ def main():
     while True:
         read_list, write_list, error_list = select.select([client_socket], [client_socket], [])
         if read_list is not None:
-            print(client_socket.recv[KB])
+            print(client_socket.recv(KB))
         else:
             user_input = get_user_input(write_list)
             if user_input is not EMPTY:

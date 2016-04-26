@@ -14,6 +14,7 @@ ENTER = ['\000', '\xe0']
 
 
 def get_user_input(write_list):
+    print ('A')
     user_input = EMPTY
     while write_list is not None and kbhit():
         keyboard = getch()
@@ -32,6 +33,8 @@ def main():
     while True:
         read_list, write_list, error_list = select.select([client_socket], [client_socket], [])
         print ('B')
+        print read_list
+        print write_list
         if read_list is not None:
             print(client_socket.recv(KB))
         else:

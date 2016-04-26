@@ -12,7 +12,7 @@ EMPTY = ''
 def handle_user(client_socket):
     name = raw_input('Mr. Server is asking for your name...')
     client_socket.send(name)
-    print(client_socket.recv(KB))
+    print('Server says: ' + client_socket.recv(KB))
 
 
 def main():

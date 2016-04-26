@@ -9,6 +9,7 @@ KB = 1024
 EMPTY = ''
 PORT = 23
 SERVER = '192.168.1.84'
+SELF_ASSIGNED_IP = '0.0.0.0'
 ENTER = ['\000', '\xe0']
 
 
@@ -27,8 +28,10 @@ def get_user_input(write_list):
 def main():
     client_socket = socket.socket()
     client_socket.connect((SERVER, PORT))
+    print ('A')
     while True:
         read_list, write_list, error_list = select.select([client_socket], [client_socket], [])
+        print ('B')
         if read_list is not None:
             print(client_socket.recv(KB))
         else:

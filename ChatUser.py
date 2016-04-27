@@ -2,6 +2,7 @@ import socket
 import select
 from msvcrt import kbhit
 from msvcrt import getch
+from ChatClasses import *
 
 __author__ = 'user'
 
@@ -16,6 +17,9 @@ CLIENT_SOCKET_INDEX = 0
 USERNAME_MESSAGE = "Hello and welcome to our chat! please type your username: "
 USERNAME_TEMPLATE = '{}\r'
 SEMI_FULL = ' '
+USER_NAME_INDEX = 1
+CHAT_MESSAGE_CODE = 1
+PROTOCOL_TEMPLATE = '{}|{}|{}|{}|{}'
 
 
 def get_user_input(user_input):
@@ -34,13 +38,15 @@ def get_user_input(user_input):
     return False, user_input
 
 
-def should_send(data, write_list):
+def should_send(data, write_list, user_name):
     """
     :param data: is message ready to be sent, message
     :param write_list: Sockets available to write to
+    :param user_name: user name given by user
     """
     if write_list and data[SEND_FLAG_INDEX]:
-        write_list[CLIENT_SOCKET_INDEX].send(data[MESSAGE_INDEX].replace('\r', ''))
+        write_list[CLIENT_SOCKET_INDEX].send(PROTOCOL_TEMPLATE.format(len(user_name), user_name, CHAT_MESSAGE_CODE,
+                                                                      len(data[MESSAGE_INDEX]), data[MESSAGE_INDEX]))
         return EMPTY
 
     return data[MESSAGE_INDEX]
@@ -57,19 +63,20 @@ def set_setting():
     user_input = USERNAME_TEMPLATE.format(user_name)
     should_send((True, user_input), [client_socket])
 
-    return client_socket
+    return client_socket, user_name
 
 
 def main():
-    data = SEMI_FULL
-    client_socket = set_setting()
+    data = set_setting()
+    client_socket = data[CLIENT_SOCKET_INDEX]
+    user_name = data[USER_NAME_INDEX]
     user_input = EMPTY
     while data != EMPTY:
         read_list, write_list, error_list = select.select([client_socket], [client_socket], [])
         if read_list:
             data = client_socket.recv(KB)
             print(data)
-        user_input = should_send(get_user_input(user_input), write_list)
+        user_input = should_send(get_user_input(user_input), write_list, user_name)
     print ('Sorry but U are out!')
 
 

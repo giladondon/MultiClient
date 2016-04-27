@@ -16,6 +16,20 @@ MESSAGE_TEMPLATE = '{} {}: {}'
 IS_ADMIN_DEFAULT = False
 IS_MUTED_DEFAULT = False
 QUITING_MESSAGE = 'quit'
+MESSAGE_SEPARATOR = '|'
+USERNAME_LENGTH_INDEX = 0
+USERNAME_INDEX = 1
+FUNCTION_INDEX = 2
+MESSAGE_LENGTH_INDEX = 3
+MESSAGE_INDEX = 4
+
+
+def parse_message(message):
+    """
+    :param message: got from client socket
+    :return : parsed into list [length of user name, user name, length of message, message]
+    """
+    return message.split(MESSAGE_SEPARATOR)
 
 
 def manage_data(current_socket, chat_users, messages_to_send):
@@ -24,15 +38,15 @@ def manage_data(current_socket, chat_users, messages_to_send):
     :param chat_users: dictionary that contains {Socket:User}
     :param messages_to_send: List of tuples (sender socket, message)
     """
-    data = current_socket.recv(KB)
-    if data == EMPTY or data == QUITING_MESSAGE:
+    data = parse_message(current_socket.recv(KB))
+    if data[MESSAGE_INDEX] == EMPTY or data[MESSAGE_INDEX] == QUITING_MESSAGE:
         chat_users.pop(current_socket)
         print(CONNECTION_CLOSED)
         current_socket.close()
-    elif data != EMPTY and chat_users[current_socket] == UNKNOWN_USERNAME:
-        chat_users[current_socket] = ChatUser(data, IS_ADMIN_DEFAULT, IS_MUTED_DEFAULT)
+    elif data[MESSAGE_INDEX] != EMPTY and chat_users[current_socket] == UNKNOWN_USERNAME:
+        chat_users[current_socket] = ChatUser(data[USERNAME_INDEX], IS_ADMIN_DEFAULT, IS_MUTED_DEFAULT)
     else:
-        messages_to_send.append((current_socket, data))
+        messages_to_send.append((current_socket, data[MESSAGE_INDEX]))
 
 
 def manage_chat(server_socket, chat_users, messages_to_send):

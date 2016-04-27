@@ -11,11 +11,17 @@ EMPTY = ''
 
 
 def send_waiting_messages(write_list, messages_to_send):
+    """
+    :param write_list: Sockets available to write to
+    :param messages_to_send: List of tuples (sender socket, message)
+    Sends data to all chat users except the sender and clears list
+    """
     for message in messages_to_send:
         (client_socket, data) = message
         for user in write_list:
             if user is not client_socket:
                 user.send(data)
+        print(data)
         messages_to_send.remove(message)
 
 

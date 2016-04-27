@@ -8,29 +8,36 @@ __author__ = 'user'
 KB = 1024
 EMPTY = ''
 PORT = 23
-SERVER = '192.168.1.84'
-SELF_ASSIGNED_IP = '0.0.0.0'
+SERVER = '192.168.1.67'
 ENTER = '\r'
 SEND_FLAG_INDEX = 0
 MESSAGE_INDEX = 1
+CLIENT_SOCKET_INDEX = 0
 
 
 def get_user_input(user_input):
+    """
+    :param user_input: What user inputted up till now.
+    :return : True if message is to send now, final user message
+    """
     if kbhit():
         keyboard = getch()
         if keyboard != ENTER:
             user_input = user_input + keyboard
             return False, user_input
         else:
-            print('ENTER!')
             return True, user_input
 
     return False, user_input
 
 
-def should_send(data, write_list, client_socket):
+def should_send(data, write_list):
+    """
+    :param data: is message ready to0 be sent, message
+    :param write_list: Sockets available to write to
+    """
     if write_list and data[SEND_FLAG_INDEX]:
-        client_socket.send(data[MESSAGE_INDEX])
+        write_list[CLIENT_SOCKET_INDEX].send(data[MESSAGE_INDEX])
         return EMPTY
 
     return data[MESSAGE_INDEX]
@@ -43,9 +50,8 @@ def main():
     while True:
         read_list, write_list, error_list = select.select([client_socket], [client_socket], [])
         if read_list:
-            print ('E')
             print(client_socket.recv(KB))
-        user_input = should_send(get_user_input(user_input), write_list, client_socket)
+        user_input = should_send(get_user_input(user_input), write_list)
 
 
 if __name__ == '__main__':

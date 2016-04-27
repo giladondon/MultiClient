@@ -39,7 +39,7 @@ def should_send(data, write_list):
     :param write_list: Sockets available to write to
     """
     if write_list and data[SEND_FLAG_INDEX]:
-        write_list[CLIENT_SOCKET_INDEX].send(data[MESSAGE_INDEX])
+        write_list[CLIENT_SOCKET_INDEX].send(data[MESSAGE_INDEX].replace('\r', ''))
         return EMPTY
 
     return data[MESSAGE_INDEX]
@@ -57,6 +57,7 @@ def set_setting():
 
 def main():
     client_socket = set_setting()
+    user_input = EMPTY
     while True:
         read_list, write_list, error_list = select.select([client_socket], [client_socket], [])
         if read_list:

@@ -46,6 +46,10 @@ def should_send(data, write_list):
 
 
 def set_setting():
+    """
+    Set all settings of chat user:
+    User name, socket
+    """
     user_name = raw_input(USERNAME_MESSAGE)
     client_socket = socket.socket()
     client_socket.connect((SERVER, PORT))

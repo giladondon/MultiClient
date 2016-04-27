@@ -61,7 +61,7 @@ def set_setting():
     client_socket = socket.socket()
     client_socket.connect((SERVER, PORT))
     user_input = USERNAME_TEMPLATE.format(user_name)
-    should_send((True, user_input), [client_socket])
+    should_send((True, user_input), [client_socket], user_name)
 
     return client_socket, user_name
 

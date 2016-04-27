@@ -13,6 +13,8 @@ ENTER = '\r'
 SEND_FLAG_INDEX = 0
 MESSAGE_INDEX = 1
 CLIENT_SOCKET_INDEX = 0
+USERNAME_MESSAGE = "Hello and welcome to our chat! please type your username: "
+USERNAME_TEMPLATE = '{}\r'
 
 
 def get_user_input(user_input):
@@ -33,7 +35,7 @@ def get_user_input(user_input):
 
 def should_send(data, write_list):
     """
-    :param data: is message ready to0 be sent, message
+    :param data: is message ready to be sent, message
     :param write_list: Sockets available to write to
     """
     if write_list and data[SEND_FLAG_INDEX]:
@@ -43,10 +45,18 @@ def should_send(data, write_list):
     return data[MESSAGE_INDEX]
 
 
-def main():
+def set_setting():
+    user_name = raw_input(USERNAME_MESSAGE)
     client_socket = socket.socket()
     client_socket.connect((SERVER, PORT))
-    user_input = EMPTY
+    user_input = USERNAME_TEMPLATE.format(user_name)
+    should_send((True, user_input), [client_socket])
+
+    return client_socket
+
+
+def main():
+    client_socket = set_setting()
     while True:
         read_list, write_list, error_list = select.select([client_socket], [client_socket], [])
         if read_list:

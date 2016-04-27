@@ -10,37 +10,43 @@ EMPTY = ''
 PORT = 23
 SERVER = '192.168.1.84'
 SELF_ASSIGNED_IP = '0.0.0.0'
-ENTER = ['\000', '\xe0']
+ENTER = '\r'
+SEND_FLAG_INDEX = 0
+MESSAGE_INDEX = 1
 
 
-def get_user_input(write_list):
-    print ('A')
-    user_input = EMPTY
-    while write_list is not None and kbhit():
+def get_user_input(user_input):
+    if kbhit():
         keyboard = getch()
-        if keyboard not in ENTER:
+        if keyboard != ENTER:
             user_input = user_input + keyboard
-    if user_input is not EMPTY:
-        return user_input
+            return False, user_input
+        else:
+            print('ENTER!')
+            return True, user_input
 
-    return EMPTY
+    return False, user_input
+
+
+def should_send(data, write_list, client_socket):
+    if write_list and data[SEND_FLAG_INDEX]:
+        client_socket.send(data[MESSAGE_INDEX])
+        return EMPTY
+
+    return data[MESSAGE_INDEX]
 
 
 def main():
     client_socket = socket.socket()
     client_socket.connect((SERVER, PORT))
-    print ('A')
+    user_input = EMPTY
     while True:
         read_list, write_list, error_list = select.select([client_socket], [client_socket], [])
-        print ('B')
-        print read_list
-        print write_list
-        if read_list is not None:
+        if read_list:
+            print ('E')
             print(client_socket.recv(KB))
-        else:
-            user_input = get_user_input(write_list)
-            if user_input is not EMPTY:
-                client_socket.send(user_input)
+        user_input = should_send(get_user_input(user_input), write_list, client_socket)
+
 
 if __name__ == '__main__':
     main()

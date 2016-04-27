@@ -15,6 +15,7 @@ MESSAGE_INDEX = 1
 CLIENT_SOCKET_INDEX = 0
 USERNAME_MESSAGE = "Hello and welcome to our chat! please type your username: "
 USERNAME_TEMPLATE = '{}\r'
+SEMI_FULL = ' '
 
 
 def get_user_input(user_input):
@@ -56,13 +57,16 @@ def set_setting():
 
 
 def main():
+    data = SEMI_FULL
     client_socket = set_setting()
     user_input = EMPTY
-    while True:
+    while data != EMPTY:
         read_list, write_list, error_list = select.select([client_socket], [client_socket], [])
         if read_list:
-            print(client_socket.recv(KB))
+            data = client_socket.recv(KB)
+            print(data)
         user_input = should_send(get_user_input(user_input), write_list)
+    print ('Sorry but U are out!')
 
 
 if __name__ == '__main__':

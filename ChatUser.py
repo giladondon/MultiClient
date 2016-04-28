@@ -85,7 +85,8 @@ def main():
         read_list, write_list, error_list = select.select([client_socket], [client_socket], [])
         if read_list:
             data = client_socket.recv(KB)
-            print(parse_message(data)[MESSAGE_INDEX])
+            if data != EMPTY:
+                print(parse_message(data)[MESSAGE_INDEX])
         user_input = should_send(get_user_input(user_input), write_list, user_name)
     print ('Sorry but U are out!')
 

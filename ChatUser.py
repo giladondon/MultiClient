@@ -20,6 +20,16 @@ SEMI_FULL = ' '
 USER_NAME_INDEX = 1
 CHAT_MESSAGE_CODE = 1
 PROTOCOL_TEMPLATE = '{}|{}|{}|{}|{}'
+MESSAGE_SEPARATOR = '|'
+MESSAGE_LENGTH_INDEX = 0
+
+
+def parse_message(message):
+    """
+    :param message: got from client socket
+    :return : parsed into list [length of user name, user name, length of message, message]
+    """
+    return message.split(MESSAGE_SEPARATOR)
 
 
 def get_user_input(user_input):
@@ -75,7 +85,7 @@ def main():
         read_list, write_list, error_list = select.select([client_socket], [client_socket], [])
         if read_list:
             data = client_socket.recv(KB)
-            print(data)
+            print(parse_message(data)[MESSAGE_INDEX])
         user_input = should_send(get_user_input(user_input), write_list, user_name)
     print ('Sorry but U are out!')
 

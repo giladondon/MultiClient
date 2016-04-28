@@ -24,6 +24,8 @@ FUNCTION_INDEX = 2
 MESSAGE_LENGTH_INDEX = 3
 MESSAGE_INDEX = 4
 MESSAGE_PROTOCOL_CODE = '1'
+TIME_FORMAT = "%H:%M"
+MESSAGE_PROTOCOL_FORMAT = '{}|{}'
 
 
 def parse_message(message):
@@ -35,6 +37,10 @@ def parse_message(message):
 
 
 def close_connection(chat_users, current_socket):
+    """
+    :param chat_users: dictionary that contains {Socket:User}
+    :param current_socket: one of connected client's socket
+    """
     chat_users.pop(current_socket)
     print(CONNECTION_CLOSED)
     current_socket.close()
@@ -99,9 +105,9 @@ def send_waiting_messages(write_list, messages_to_send, chat_users):
         (client_socket, data) = message
         for user in write_list:
             if user is not client_socket:
-                user.send(MESSAGE_TEMPLATE.format(strftime("%H:%M"),
-                                                  chat_users[client_socket].user_name, data))
-        print(MESSAGE_TEMPLATE.format(strftime("%H:%M"), chat_users[client_socket].user_name, data))
+                message = MESSAGE_TEMPLATE.format(strftime(TIME_FORMAT), chat_users[client_socket].user_name, data)
+                user.send(MESSAGE_PROTOCOL_FORMAT.format(len(message, message)))
+        print(MESSAGE_PROTOCOL_FORMAT.format(len(message, message)))
         messages_to_send.remove(message)
 
 

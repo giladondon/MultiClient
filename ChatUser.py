@@ -22,6 +22,9 @@ CHAT_MESSAGE_CODE = 1
 PROTOCOL_TEMPLATE = '{}|{}|{}|{}|{}'
 MESSAGE_SEPARATOR = '|'
 MESSAGE_LENGTH_INDEX = 0
+KICK_OUT_MESSAGE = 'kick out'
+ADMIN_STATUS_NOTIFICATION = 'ADMIN'
+YOU_NO_ADMIN_TEXT = 'Sorry {} you are not an Admin.'
 
 
 def parse_message(message):
@@ -48,18 +51,34 @@ def get_user_input(user_input):
     return False, user_input
 
 
-def should_send(data, write_list, user_name):
+def should_send(data, write_list, user_name, is_admin):
     """
     :param data: is message ready to be sent, message
     :param write_list: Sockets available to write to
     :param user_name: user name given by user
     """
-    if write_list and data[SEND_FLAG_INDEX]:
-        write_list[CLIENT_SOCKET_INDEX].send(PROTOCOL_TEMPLATE.format(len(user_name), user_name, CHAT_MESSAGE_CODE,
-                                                                      len(data[MESSAGE_INDEX]), data[MESSAGE_INDEX]))
+    if not is_admin and data[MESSAGE_INDEX] == ADMIN_STATUS_NOTIFICATION:
+        print(YOU_NO_ADMIN_TEXT.format(user_name))
+        return EMPTY
+
+    elif write_list and data[SEND_FLAG_INDEX]:
+        if data[MESSAGE_INDEX].startswith(KICK_OUT_MESSAGE):
+            pass
+        else:
+            write_list[CLIENT_SOCKET_INDEX].send(PROTOCOL_TEMPLATE.format(len(user_name), user_name,
+                                                                          CHAT_MESSAGE_CODE, len(data[MESSAGE_INDEX]),
+                                                                          data[MESSAGE_INDEX]))
         return EMPTY
 
     return data[MESSAGE_INDEX]
+
+
+def check_status(data):
+    """
+    :param data: received from server
+    :return : True if user is reported admin!
+    """
+    return parse_message(data)[MESSAGE_INDEX] == ADMIN_STATUS_NOTIFICATION
 
 
 def set_setting():
@@ -71,12 +90,13 @@ def set_setting():
     client_socket = socket.socket()
     client_socket.connect((SERVER, PORT))
     user_input = USERNAME_TEMPLATE.format(user_name)
-    should_send((True, user_input), [client_socket], user_name)
+    should_send((True, user_input), [client_socket], user_name, False)
 
     return client_socket, user_name
 
 
 def main():
+    is_admin = False
     data = set_setting()
     client_socket = data[CLIENT_SOCKET_INDEX]
     user_name = data[USER_NAME_INDEX]
@@ -86,9 +106,10 @@ def main():
         if read_list:
             data = client_socket.recv(KB)
             if data != EMPTY:
+                if parse_message(data)[MESSAGE_INDEX] == ADMIN_STATUS_NOTIFICATION:
+                    is_admin = True
                 print(parse_message(data)[MESSAGE_INDEX])
-        user_input = should_send(get_user_input(user_input), write_list, user_name)
-    print ('Sorry but U are out!')
+        user_input = should_send(get_user_input(user_input), write_list, user_name, is_admin)
 
 
 if __name__ == '__main__':

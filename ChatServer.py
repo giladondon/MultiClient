@@ -27,6 +27,16 @@ MESSAGE_PROTOCOL_CODE = '1'
 TIME_FORMAT = "%H:%M"
 MESSAGE_PROTOCOL_FORMAT = '{}|{}'
 LEFT_CHAT_MESSAGE = 'has left the chat!'
+ADMINS = set(['Giladondon', 'Miki', 'Admin'])
+ADMIN_AT = '@'
+
+
+def ignite_user(user_name):
+    user = ChatUser(user_name, IS_ADMIN_DEFAULT, IS_MUTED_DEFAULT)
+    if user_name in ADMINS:
+        user.is_admin = True
+        user.user_name = ADMIN_AT + user.user_name
+    return user
 
 
 def parse_message(message):
@@ -62,19 +72,21 @@ def manage_data(current_socket, chat_users, messages_to_send):
     :param chat_users: dictionary that contains {Socket:User}
     :param messages_to_send: List of tuples (sender socket, message)
     """
-    data = parse_message(current_socket.recv(KB))
+    data = current_socket.recv(KB)
 
-    if data == EMPTY_DATA:
+    if data == EMPTY:
         close_connection(chat_users, current_socket)
         return
 
-    elif data[FUNCTION_INDEX] == MESSAGE_PROTOCOL_CODE:
+    data = parse_message(data)
+
+    if data[FUNCTION_INDEX] == MESSAGE_PROTOCOL_CODE:
         if data[MESSAGE_INDEX] == QUITING_MESSAGE:
                 close_connection(chat_users, current_socket)
                 return
 
         elif data[MESSAGE_INDEX] != EMPTY and chat_users[current_socket] == UNKNOWN_USERNAME:
-            chat_users[current_socket] = ChatUser(data[USERNAME_INDEX], IS_ADMIN_DEFAULT, IS_MUTED_DEFAULT)
+            chat_users[current_socket] = ignite_user(data[USERNAME_INDEX])
 
         else:
             messages_to_send.append((current_socket, data[MESSAGE_INDEX]))

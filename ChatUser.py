@@ -19,12 +19,16 @@ USERNAME_TEMPLATE = '{}\r'
 SEMI_FULL = ' '
 USER_NAME_INDEX = 1
 CHAT_MESSAGE_CODE = 1
-PROTOCOL_TEMPLATE = '{}|{}|{}|{}|{}'
+KICK_OUT_CODE = 3
+PROTOCOL_MESSAGE_TEMPLATE = '{}|{}|{}|{}|{}'
 MESSAGE_SEPARATOR = '|'
 MESSAGE_LENGTH_INDEX = 0
 KICK_OUT_MESSAGE = 'kick out'
 ADMIN_STATUS_NOTIFICATION = 'ADMIN'
 YOU_NO_ADMIN_TEXT = 'Sorry {} you are not an Admin.'
+ADMIN_SIGN = '@'
+KICK_OUT_PROTOCOL_TEMPLATE = ''
+USERNAME_KICK_INDEX = len(KICK_OUT_MESSAGE) + 1
 
 
 def parse_message(message):
@@ -51,23 +55,34 @@ def get_user_input(user_input):
     return False, user_input
 
 
+def kick_out(data, write_list):
+    """
+    Set up for kick out!
+    """
+    write_list[CLIENT_SOCKET_INDEX].send()
+
+
 def should_send(data, write_list, user_name, is_admin):
     """
     :param data: is message ready to be sent, message
     :param write_list: Sockets available to write to
     :param user_name: user name given by user
     """
-    if not is_admin and data[MESSAGE_INDEX] == ADMIN_STATUS_NOTIFICATION:
+    if not is_admin and data[MESSAGE_INDEX].lower().startswith(KICK_OUT_MESSAGE):
         print(YOU_NO_ADMIN_TEXT.format(user_name))
         return EMPTY
 
     elif write_list and data[SEND_FLAG_INDEX]:
-        if data[MESSAGE_INDEX].startswith(KICK_OUT_MESSAGE):
-            pass
+        if data[MESSAGE_INDEX].startswith(KICK_OUT_MESSAGE) and is_admin:
+            write_list[CLIENT_SOCKET_INDEX].send(PROTOCOL_MESSAGE_TEMPLATE.format(
+                len(user_name), user_name,
+                KICK_OUT_CODE, len(data[MESSAGE_INDEX][USERNAME_KICK_INDEX:]),
+                data[MESSAGE_INDEX][USERNAME_KICK_INDEX:]))
         else:
-            write_list[CLIENT_SOCKET_INDEX].send(PROTOCOL_TEMPLATE.format(len(user_name), user_name,
-                                                                          CHAT_MESSAGE_CODE, len(data[MESSAGE_INDEX]),
-                                                                          data[MESSAGE_INDEX]))
+            write_list[CLIENT_SOCKET_INDEX].send(PROTOCOL_MESSAGE_TEMPLATE.format(len(user_name),
+                                                                                  user_name, CHAT_MESSAGE_CODE,
+                                                                                  len(data[MESSAGE_INDEX]),
+                                                                                  data[MESSAGE_INDEX]))
         return EMPTY
 
     return data[MESSAGE_INDEX]
@@ -87,6 +102,8 @@ def set_setting():
     User name, socket
     """
     user_name = raw_input(USERNAME_MESSAGE)
+    while user_name.startswith(ADMIN_SIGN):
+        user_name = raw_input(USERNAME_MESSAGE)
     client_socket = socket.socket()
     client_socket.connect((SERVER, PORT))
     user_input = USERNAME_TEMPLATE.format(user_name)
@@ -106,9 +123,10 @@ def main():
         if read_list:
             data = client_socket.recv(KB)
             if data != EMPTY:
-                if parse_message(data)[MESSAGE_INDEX] == ADMIN_STATUS_NOTIFICATION:
+                if data == ADMIN_STATUS_NOTIFICATION:
                     is_admin = True
-                print(parse_message(data)[MESSAGE_INDEX])
+                else:
+                    print(parse_message(data)[MESSAGE_INDEX])
         user_input = should_send(get_user_input(user_input), write_list, user_name, is_admin)
 
 

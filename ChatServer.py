@@ -24,14 +24,32 @@ FUNCTION_INDEX = 2
 MESSAGE_LENGTH_INDEX = 3
 MESSAGE_INDEX = 4
 MESSAGE_PROTOCOL_CODE = '1'
+KICK_OUT_CODE = '3'
 TIME_FORMAT = "%H:%M"
 MESSAGE_PROTOCOL_FORMAT = '{}|{}'
 LEFT_CHAT_MESSAGE = 'has left the chat!'
+KICKED_OUT_MESSAGE = 'has been kicked out from the chat!'
 ADMINS = set(['Giladondon', 'Miki', 'Admin'])
 ADMIN_AT = '@'
+ADMIN_STATUS_NOTIFICATION = 'ADMIN'
+
+
+def get_key_by_value(dict, search_value):
+    """
+    :param dict: dictionary
+    :return key: key of value
+    """
+    for key, value in dict.iteritems():
+        if value.user_name == search_value:
+            return key
+    return None
 
 
 def ignite_user(user_name):
+    """
+    :param user_name: string representing user_name of user
+    Sets every new user connected
+    """
     user = ChatUser(user_name, IS_ADMIN_DEFAULT, IS_MUTED_DEFAULT)
     if user_name in ADMINS:
         user.is_admin = True
@@ -47,23 +65,28 @@ def parse_message(message):
     return message.split(MESSAGE_SEPARATOR)
 
 
-def close_connection(chat_users, current_socket):
+def close_connection(chat_users, current_socket, is_kicked):
     """
     :param chat_users: dictionary that contains {Socket:User}
     :param current_socket: one of connected client's socket
     """
-    left_chat_notification = MESSAGE_TEMPLATE.format(strftime(TIME_FORMAT),
-                                                     chat_users[current_socket].user_name, LEFT_CHAT_MESSAGE)
+    if current_socket:
+        if is_kicked:
+            left_chat_notification = MESSAGE_TEMPLATE.format(strftime(TIME_FORMAT),
+                                                             chat_users[current_socket].user_name, KICKED_OUT_MESSAGE)
+        else:
+            left_chat_notification = MESSAGE_TEMPLATE.format(strftime(TIME_FORMAT),
+                                                             chat_users[current_socket].user_name, LEFT_CHAT_MESSAGE)
 
-    left_chat_notification = MESSAGE_PROTOCOL_FORMAT.format(len(left_chat_notification), left_chat_notification)
+        left_chat_notification = MESSAGE_PROTOCOL_FORMAT.format(len(left_chat_notification), left_chat_notification)
 
-    for user in chat_users.keys():
-        user.send(left_chat_notification)
+        for user in chat_users.keys():
+            user.send(left_chat_notification)
 
-    print(left_chat_notification)
+        print(left_chat_notification)
 
-    chat_users.pop(current_socket)
-    current_socket.close()
+        chat_users.pop(current_socket)
+        current_socket.close()
 
 
 def manage_data(current_socket, chat_users, messages_to_send):
@@ -75,21 +98,26 @@ def manage_data(current_socket, chat_users, messages_to_send):
     data = current_socket.recv(KB)
 
     if data == EMPTY:
-        close_connection(chat_users, current_socket)
+        close_connection(chat_users, current_socket, False)
         return
 
     data = parse_message(data)
 
     if data[FUNCTION_INDEX] == MESSAGE_PROTOCOL_CODE:
         if data[MESSAGE_INDEX] == QUITING_MESSAGE:
-                close_connection(chat_users, current_socket)
+                close_connection(chat_users, current_socket, False)
                 return
 
         elif data[MESSAGE_INDEX] != EMPTY and chat_users[current_socket] == UNKNOWN_USERNAME:
             chat_users[current_socket] = ignite_user(data[USERNAME_INDEX])
+            if chat_users[current_socket].is_admin:
+                current_socket.send(ADMIN_STATUS_NOTIFICATION)
 
         else:
             messages_to_send.append((current_socket, data[MESSAGE_INDEX]))
+
+    elif data[FUNCTION_INDEX] == KICK_OUT_CODE:
+        close_connection(chat_users, get_key_by_value(chat_users, data[MESSAGE_INDEX]), True)
 
 
 def manage_chat(server_socket, chat_users, messages_to_send):

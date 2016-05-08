@@ -55,13 +55,6 @@ def get_user_input(user_input):
     return False, user_input
 
 
-def kick_out(data, write_list):
-    """
-    Set up for kick out!
-    """
-    write_list[CLIENT_SOCKET_INDEX].send()
-
-
 def should_send(data, write_list, user_name, is_admin):
     """
     :param data: is message ready to be sent, message

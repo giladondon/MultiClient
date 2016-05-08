@@ -89,6 +89,37 @@ def close_connection(chat_users, current_socket, is_kicked):
         current_socket.close()
 
 
+def manage_message(data, chat_users, current_socket, messages_to_send):
+    """
+    :param data: data after being parsed using function
+    :param chat_users: dictionary that contains {Socket:User}
+    :param current_socket: one of connected client's socket
+    :param messages_to_send: List of tuples (sender socket, message)
+    manages messages server got from users
+    """
+    if data[MESSAGE_INDEX] == QUITING_MESSAGE:
+        close_connection(chat_users, current_socket, False)
+        return
+
+    elif data[MESSAGE_INDEX] != EMPTY and chat_users[current_socket] == UNKNOWN_USERNAME:
+        update_user(chat_users, current_socket, data)
+
+    else:
+        messages_to_send.append((current_socket, data[MESSAGE_INDEX]))
+
+
+def update_user(chat_users, current_socket, data):
+    """
+    :param chat_users: dictionary that contains {Socket:User}
+    :param current_socket: one of connected client's socket
+    :param data: data after being parsed using function
+    updates an UNKNOWN user to a new one
+    """
+    chat_users[current_socket] = ignite_user(data[USERNAME_INDEX])
+    if chat_users[current_socket].is_admin:
+        current_socket.send(ADMIN_STATUS_NOTIFICATION)
+
+
 def manage_data(current_socket, chat_users, messages_to_send):
     """
     :param current_socket: one of connected client's socket
@@ -104,17 +135,7 @@ def manage_data(current_socket, chat_users, messages_to_send):
     data = parse_message(data)
 
     if data[FUNCTION_INDEX] == MESSAGE_PROTOCOL_CODE:
-        if data[MESSAGE_INDEX] == QUITING_MESSAGE:
-                close_connection(chat_users, current_socket, False)
-                return
-
-        elif data[MESSAGE_INDEX] != EMPTY and chat_users[current_socket] == UNKNOWN_USERNAME:
-            chat_users[current_socket] = ignite_user(data[USERNAME_INDEX])
-            if chat_users[current_socket].is_admin:
-                current_socket.send(ADMIN_STATUS_NOTIFICATION)
-
-        else:
-            messages_to_send.append((current_socket, data[MESSAGE_INDEX]))
+        manage_message(data, chat_users, current_socket, messages_to_send)
 
     elif data[FUNCTION_INDEX] == KICK_OUT_CODE:
         close_connection(chat_users, get_key_by_value(chat_users, data[MESSAGE_INDEX]), True)
